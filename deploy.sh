@@ -33,7 +33,7 @@ aws cloudformation deploy  \
   --parameter-overrides \
     BucketName=${s3_bucket_name} \
     CodeBucketName=${lambda_code_bucket} \
-    CodeFileName=s3://${lmbda_code_bucket}/${lambda_code_package} \
+    CodeFileName=${lambda_code_package} \
   --capabilities "CAPABILITY_NAMED_IAM"
 
 # Imprima a saída da pilha CloudFormation

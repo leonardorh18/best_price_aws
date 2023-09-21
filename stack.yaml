@@ -60,6 +60,23 @@ Resources:
         Variables:
           S3_BUCKET_NAME: !Ref BucketName
 
+  EventBridgeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: EventBridge rule to trigger Lambda
+      EventPattern:
+        source:
+          - "aws.scheduled"
+        detail:
+          eventName:
+            - "Scheduled Event"
+        resources:
+          - !GetAtt LambdaBestPrice.Arn
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt LambdaBestPrice.Arn
+          Id: Target1
+
   MySNSTopic:
     Type: AWS::SNS::Topic
     Properties:
