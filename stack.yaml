@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Template for creating an S3 bucket, Lambda function, and SNS topic.
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: Name for the S3 bucket
+    Default: melhor-preco-10-raw
+  CodeBucketName:
+    Type: String
+    Description: Name for the S3 bucket
+  CodeFileName:
+    Type: String
+    Description: Name for the S3 bucket
+
+
+Resources:
+  S3BucketRaw:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaS3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: 
+                  - !Sub 'arn:aws:s3:::${BucketName}/*'
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: "*"
+
+  LambdaBestPrice:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: LambdaBestPriceNotify
+      Handler: main.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: !Ref CodeBucketName   # Substitua pelo nome do bucket S3 que contém o código da Lambda
+        S3Key: !Ref CodeFileName
+      Runtime: python3.7
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !Ref BucketName
+
+  MySNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: MySNSTopic
+
+Outputs:
+  LambdaFunctionName:
+    Description: Name of the Lambda function
+    Value: !Ref LambdaBestPrice
+
+  S3BucketName:
+    Description: Name of the S3 bucket
+    Value: !Ref BucketName
+
+  SNSTopicName:
+    Description: Name of the SNS topic
+    Value: !Ref MySNSTopic
