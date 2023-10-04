@@ -6,8 +6,19 @@ Parameters:
     Type: String
     Description: Name for the S3 bucket
     Default: melhor-preco-10-raw
+  AwsAccessKey:
+    Type: String
+  AwsSecretKey:
+    Type: String
+  AwsRegion:
+    Type: String
+  ScheduleExpression:
+    Type: String
+    Default: "cron(0 * * * ? *)"  # Cron para executar a cada 1 hora
+    Description: Expressão de agendamento do CloudWatch Events
 
 Resources:
+
   S3BucketRaw:
     Type: AWS::S3::Bucket
     Properties:
@@ -17,6 +28,87 @@ Resources:
     Type: AWS::SNS::Topic
     Properties:
       DisplayName: BestPrice
+
+  MyFargateCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: MyFargateCluster
+
+  MyFargateTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: MyFargateTaskExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SNSAndS3AccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: !GetAtt S3BucketRaw.Arn   # ARN do seu bucket S3
+
+  MyFargateTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: best_price
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: '1024'  # Ajuste a CPU conforme necessário
+      Memory: '2048'  # Ajuste a memória conforme necessário
+      ExecutionRoleArn: !GetAtt MyFargateTaskExecutionRole.Arn  # Usando a role criada
+      ContainerDefinitions:
+        - Name: best_price
+          Image: public.ecr.aws/h6l8j4u7/best_price:latest  # Substitua pela imagem da sua aplicação
+          PortMappings:
+            - ContainerPort: 80  # Porta exposta pela sua aplicação
+          Environment:
+            - Name: SEARCH
+              Value: monitor 144hz  
+            - Name: BUCKET_NAME
+              Value: !Ref BucketName 
+            - Name: AWS_ACCESS_KEY
+              Value: !Ref AwsAccessKey 
+            - Name: AWS_SECRET_KEY
+              Value: !Ref AwsSecretKey  
+            - Name: AWS_REGION
+              Value: !Ref AwsRegion 
+            - Name: PRICE_LIMIT
+              Value: 900 
+            - Name: TOPIC_ARN
+              Value: !GetAtt MySNSTopic.TopicArn
+
+  MyScheduledFargateTask:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Tarefa Programada para Fargate
+      Name: MyScheduledFargateTask
+      ScheduleExpression: !Ref ScheduleExpression
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt 
+            - MyFargateCluster
+            - Arn
+          RoleArn: !GetAtt 
+            - MyFargateTaskExecutionRole
+            - Arn
+          Id: Id345
+          EcsParameters:
+            TaskCount: 1
+            TaskDefinitionArn: !Ref MyFargateTaskDefinition
 
 Outputs:
   S3BucketName:

@@ -48,7 +48,7 @@ def save_file(df, session):
         BUCKET,
         f"{path}{file_name}"
     )
-    
+    os.remove(file_name)
     print("UPLOAD S3 CONCLUIDO!")
 
 def get_product_info(items):

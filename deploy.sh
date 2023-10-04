@@ -3,6 +3,10 @@
 # Nome do arquivo de modelo YAML
 template_file="stack.yaml"
 
+aws_access_key_id=$(aws configure get aws_access_key_id)
+aws_secret_access_key=$(aws configure get aws_secret_access_key)
+aws_region=$(aws configure get region)
+
 # Nome da pilha do CloudFormation
 stack_name="MelhorPreco"
 
@@ -16,6 +20,9 @@ aws cloudformation deploy  \
   --template-file $template_file \
   --parameter-overrides \
     BucketName=${s3_bucket_name} \
+    AwsAccessKey=${aws_access_key_id} \
+    AwsSecretKey=${aws_secret_access_key} \
+    AwsRegion=${aws_region} \
   --capabilities "CAPABILITY_NAMED_IAM"
 
 # Imprima a saída da pilha CloudFormation
