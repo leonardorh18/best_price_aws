@@ -9,9 +9,9 @@ import re
 
 SEARCH = os.environ['SEARCH']
 BUCKET = os.environ['BUCKET_NAME']
-#AWS_ACCESS_KEY = os.environ['AWS_ACCESS_KEY']
-#AWS_SECRET_KEY = os.environ['AWS_SECRET_KEY']
-#AWS_REGION = os.environ['AWS_REGION']
+AWS_ACCESS_KEY = os.environ['AWS_ACCESS_KEY']
+AWS_SECRET_KEY = os.environ['AWS_SECRET_KEY']
+AWS_REGION = os.environ['AWS_REGION']
 TOPIC_ARN = os.environ['TOPIC_ARN']
 
 def get_driver():
@@ -125,7 +125,11 @@ def publish_email(session, df):
 if __name__ == "__main__":
     # URL da página que você deseja extrair os links
 
-    session = boto3.Session()
+    session = boto3.Session(
+        aws_access_key_id=AWS_ACCESS_KEY,
+        aws_secret_access_key=AWS_SECRET_KEY,
+        region_name= AWS_REGION,
+    )
     search = SEARCH.replace(" ", "+")
     url = f'https://www.terabyteshop.com.br/busca?str={search}'
 
