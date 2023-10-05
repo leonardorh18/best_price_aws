@@ -16,6 +16,10 @@ Parameters:
     Type: String
     Default: "cron(0 * * * ? *)"  # Cron para executar a cada 1 hora
     Description: Expressão de agendamento do CloudWatch Events
+  SecurityGroup:
+    Type: String
+  Subnet:
+    Type: String
 
 Resources:
 
@@ -46,19 +50,23 @@ Resources:
               Service: ecs-tasks.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: SNSAndS3AccessPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sns:Publish
-                Resource: '*'
-              - Effect: Allow
-                Action:
-                  - s3:GetObject
-                  - s3:PutObject
-                Resource: !GetAtt S3BucketRaw.Arn   # ARN do seu bucket S3
+            - PolicyName: SNSAndS3AccessPolicy
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                  - Effect: Allow
+                    Action:
+                      - sns:Publish
+                    Resource: '*'
+                  - Effect: Allow
+                    Action:
+                      - s3:GetObject
+                      - s3:PutObject
+                    Resource: !GetAtt S3BucketRaw.Arn   # ARN do seu bucket S3
+                  - Effect: Allow
+                    Action:
+                      - ecs:RunTask
+                    Resource: "*"              
 
   MyFargateTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -91,6 +99,23 @@ Resources:
             - Name: TOPIC_ARN
               Value: !GetAtt MySNSTopic.TopicArn
 
+
+
+  MyFargateTaskScheduleExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: MyScheduledFargateTaskExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceEventsRole    
+
   MyScheduledFargateTask:
     Type: AWS::Events::Rule
     Properties:
@@ -98,17 +123,25 @@ Resources:
       Name: MyScheduledFargateTask
       ScheduleExpression: !Ref ScheduleExpression
       State: ENABLED
+      #RoleArn: !GetAtt MyFargateTaskScheduleExecutionRole.Arn
       Targets:
         - Arn: !GetAtt 
             - MyFargateCluster
             - Arn
           RoleArn: !GetAtt 
-            - MyFargateTaskExecutionRole
+            - MyFargateTaskScheduleExecutionRole
             - Arn
           Id: Id345
           EcsParameters:
             TaskCount: 1
             TaskDefinitionArn: !Ref MyFargateTaskDefinition
+            LaunchType: "FARGATE"
+            NetworkConfiguration:
+              AwsVpcConfiguration:
+                AssignPublicIp: "ENABLED"
+                SecurityGroups:  [!Ref SecurityGroup]
+                Subnets: [!Ref Subnet]
+                  
 
 Outputs:
   S3BucketName:

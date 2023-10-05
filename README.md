@@ -1,28 +1,38 @@
-# Best price for AWS
+# Melhor preço para AWS
 
-## Product Price Tracker
+## Rastreador de Preços de Produtos
 
-This small project aims to run a code on AWS that is capable of fetching information about specific products on shopping websites and notifying the user when the desired product is found at an ideal price.
+Este pequeno projeto tem como objetivo executar um código na AWS capaz de buscar informações sobre produtos específicos em sites de compras e notificar o usuário quando o produto desejado for encontrado a um preço ideal. Quando o preço está abaixo do limite definido uma notificação por email é mandada para os emails cadastrados no topico SNS. Os preços também são armazenados em um bucket no S3.
 
-## Getting Started
+![Minha Imagem](BestPrice.drawio.png)
 
-To set up your own environment, simply deploy the `deploy.sh` file, making sure to customize the bucket name variables.
+## Começando
 
-### Prerequisites
+Para configurar seu próprio ambiente, basta implantar o arquivo `deploy.sh`, certificando-se de personalizar as variáveis de nome do bucket.
 
-Before you begin, ensure you have the following prerequisites:
+### Pré-requisitos
 
-- An AWS account with necessary permissions.
-- AWS CLI installed and configured with your AWS credentials.
+Antes de começar, certifique-se de ter os seguintes pré-requisitos:
 
-### Deployment
+- Uma conta AWS com as permissões necessárias. (Write S3 e Publish SNS)
+- AWS CLI instalado e configurado com suas credenciais da AWS.
 
-1. Clone this repository to your local machine
-3. Run and fill with your credentials
+### Implantação
+
+1. Clone este repositório para sua máquina local.
+2. Execute e preencha com suas credenciais:
  ```shell
     aws configure
-```
-3. Execute 
- ```shell
+``` 
+3. Para fazer o deploy, execute o arquivo:
+  ```shell
     ./deploy.sh
-```
+  ```
+4. Não esqueçade adicionar o email no tópico SNS depois que a stack estiver criada. As variaveis de ambiente da Task guardam a string de busca e também o limite de preço.
+
+##  **Ponto de atenção**: 
+- As credenciais passadas para o task devem ter apenas as permissões que ela precisa (Put S3 e Publish no SNS)
+
+### Implementação Futura:
+- Guardar as credenciais no Secret da AWS, atualmente elas são passadas por variavel de ambiente
+
