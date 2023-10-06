@@ -29,6 +29,7 @@ Antes de começar, certifique-se de ter os seguintes pré-requisitos:
     ./deploy.sh
   ```
 4. Não esqueçade adicionar o email no tópico SNS depois que a stack estiver criada. As variaveis de ambiente da Task guardam a string de busca e também o limite de preço.
+5. Para mudar a string de busca, basta mudar o valor da variavel de ambiente "SEARCH".
 
 ##  **Ponto de atenção**: 
 - As credenciais passadas para o task devem ter apenas as permissões que ela precisa (Put S3 e Publish no SNS)
